@@ -1,0 +1,20 @@
+---
+- name: Make sure nrpe is installed
+  apt: name=nagios-nrpe-server state=present
+
+- name: install check-crm nagios plugin
+  copy:
+    src: check_crm_v0_7
+    dest: /usr/lib/nagios/plugins/check_crm_v0_7
+    mode: 0755
+    owner: root
+    group: root
+
+- name: create sudoers configuration
+  copy: src=check_crm.sudo.cfg
+        dest=/etc/sudoers.d/check_crm owner=root group=root mode=0440
+
+- name: create nrpe configuration file
+  copy: src=check_crm.nrpe.cfg
+        dest=/etc/nagios/nrpe.d/check_crm.cfg owner=root group=root mode=0644
+  notify: reload nrpe

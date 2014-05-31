@@ -1,0 +1,8 @@
+---
+- name: Find the designated host for the cluster
+  set_fact:
+    designated_host: '{{ ( crm_cluster_members | mandatory | sort)[0] }}'
+
+- name: Print information on which host is the designated one
+  debug:
+    var: designated_host

@@ -1,0 +1,86 @@
+---
+- name: make sure heartbeat is not installed
+  apt: pkg=heartbeat state=absent
+
+- name: install pacemaker
+  apt: pkg=pacemaker state=present
+
+- name: install corosync on squeeze
+  #p2p connections are not supported in default sqeeze's corosync
+  apt: pkg={{ item }} state=present default_release=squeeze-backports
+  with_items:
+    - corosync=1.4.2-1~bpo60+1
+    - pacemaker=1.1.7-1~bpo60+1
+  when: ansible_lsb.codename == 'squeeze'
+
+- name: install pacemaker and corosync on more recent systems
+  apt: pkg={{ item }} state=present
+  with_items:
+    - corosync
+    - pacemaker
+  when: ansible_lsb.codename != 'squeeze'
+
+- name: install corosync authkey for given market
+  copy:
+    content: "{{ crm_corosync_key }}"
+    dest: /etc/corosync/authkey.base64
+    owner: root
+    group: root
+    mode: 0400
+    backup: no
+  register: crm_corosync_key_updated
+  tags:
+    - secret
+
+- name: install corosync configuration for given market
+  template: src=corosync.conf.j2
+            dest=/etc/corosync/corosync.conf
+            owner=root group=root mode=0644
+  register: crm_corosync_config_updated
+
+#Synchronous handler starts
+- name: decode corosync key
+  shell: base64 --decode /etc/corosync/authkey.base64 > /etc/corosync/authkey
+  when: crm_corosync_key_updated|changed
+
+- name: decode corosync key - fix permissions
+  file:
+    path: /etc/corosync/authkey
+    mode: 0400
+    owner: root
+    group: root
+  when: crm_corosync_key_updated|changed
+
+- name: restart corosync - enable maintenance mode
+  command: crm configure property maintenance-mode=true
+  when:
+    - crm_corosync_key_updated|changed or crm_corosync_config_updated|changed
+    - inventory_hostname == designated_host
+
+- name: restart corosync - do restart
+  service: name=corosync state=restarted
+  when:
+    - crm_corosync_key_updated|changed or crm_corosync_config_updated|changed
+
+- name: restart corosync - disable maintenance mode
+  command: crm configure property maintenance-mode=false
+  when:
+    - crm_corosync_key_updated|changed or crm_corosync_config_updated|changed
+    - inventory_hostname == designated_host
+#Synchronous handler ends
+
+- name: create log directory
+  file: state=directory path=/var/log/cluster/ owner=root group=root mode=0770
+
+#FIXME - do we need a separate logrotate configuration ?
+
+- name: disable debianish boot control for corosync
+  copy: src=corosync.debian
+        dest=/etc/default/corosync owner=root group=root mode=0644
+
+#It is already being started by corosync
+- name: disable starting pacemaker at boot
+  service: name=pacemaker enabled=no state=stopped
+
+- name: enable starting corosync at boot
+  service: name=corosync enabled=yes state=started

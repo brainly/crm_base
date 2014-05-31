@@ -1,0 +1,6 @@
+---
+# FIXME not sure if it should go to common/ role pulled in
+# as a dependency:
+- include: pre_flight.yml tags=base,secret,monitoring
+- include: base.yml tags=base
+- include: monitoring.yml tags=monitoring
