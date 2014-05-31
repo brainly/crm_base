@@ -27,8 +27,8 @@ This role requires:
 template. Corosync does not handle well assymetric memberships.
 
     In order to do it one will have to resolve inventory hostname to IP
-addresses. This can be done using one of the lookup plugins available on the
-Internet.
+addresses directly in the template. This can be done using one of the lookup
+plugins freely available on the Internet.
 
 Plese see Example Playbook section for details.
 
