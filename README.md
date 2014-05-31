@@ -8,9 +8,9 @@ by the role as well.
 Requirements
 ------------
 
-The role was tested using Ansible 1.5 and higher. Corosync's keys are stored in
-Ansible's Vault so anything below 1.5 will not work. There are no other
-dependencies.
+The role was tested using Ansible 1.5 and higher. Corosync's keys should be
+stored in Ansible's Vault so anything below 1.5 will not work. There are no
+other dependencies.
 
 Role Variables
 --------------
