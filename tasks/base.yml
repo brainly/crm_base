@@ -20,6 +20,18 @@
     - pacemaker
   when: ansible_lsb.codename != 'squeeze'
 
+# module-init-tools is a dummy package is provided to support the transition
+# from module-init-tools to kmod. Kmod contains utilities required by IPaddr2
+# module
+- name: install kmod (ocf:heartbeat:IPaddr2 dependency) on wheezy hosts
+  apt: pkg=kmod state=present
+  when: "ansible_lsb.codename == 'wheezy' or ansible_distribution_release == 'wheezy'"
+
+- name: install module-init-tools (ocf:heartbeat:IPaddr2 dependency) on squeezy hosts
+  apt: pkg=module-init-tools state=present
+  when: "ansible_lsb.codename == 'squeezy' or ansible_distribution_release == 'squeezy'"
+
+
 - name: install corosync authkey for given market
   copy:
     content: "{{ crm_corosync_key }}"
