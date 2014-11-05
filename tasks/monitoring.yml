@@ -12,7 +12,7 @@
 
 - name: create sudoers configuration
   copy: src=check_crm.sudo.cfg
-        dest=/etc/sudoers.d/check_crm owner=root group=root mode=0440
+        dest=/etc/sudoers.d/check_crm.sudo owner=root group=root mode=0440
 
 - name: create nrpe configuration file
   copy: src=check_crm.nrpe.cfg
