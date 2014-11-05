@@ -63,22 +63,40 @@
     group: root
   when: crm_corosync_key_updated|changed
 
+# If corosync has just been started, then there is no point in restarting it
+# again.
+- name: make sure corosync is started before entering maintenance mode
+  service: name=corosync state=started
+  when: crm_corosync_key_updated|changed
+  register: corosync_started
+
+- name: check if there is any CIB loaded
+  shell: crm configure show 2>&1 | grep No\ CIB
+  register: cib_is_nonzero
+  ignore_errors: yes
+  changed_when: false
+
 - name: restart corosync - enable maintenance mode
   command: crm configure property maintenance-mode=true
   when:
     - crm_corosync_key_updated|changed or crm_corosync_config_updated|changed
     - inventory_hostname == designated_host
+    - not corosync_started|changed
+    - cib_is_nonzero.rc != 0
 
 - name: restart corosync - do restart
   service: name=corosync state=restarted
   when:
     - crm_corosync_key_updated|changed or crm_corosync_config_updated|changed
+    - not corosync_started|changed
 
 - name: restart corosync - disable maintenance mode
   command: crm configure property maintenance-mode=false
   when:
     - crm_corosync_key_updated|changed or crm_corosync_config_updated|changed
     - inventory_hostname == designated_host
+    - not corosync_started|changed
+    - cib_is_nonzero.rc != 0
 #Synchronous handler ends
 
 - name: create log directory
